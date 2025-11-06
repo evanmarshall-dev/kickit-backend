@@ -2,6 +2,9 @@
 
 RESTful API for KickIt, a bucket list adventure tracking application built with Express, Node.js, and MongoDB.
 
+> [!NOTE]
+> To reference adventure, tasks, or goals, we use the term "kicks" throughout this documentation.
+
 ## Frontend Repository
 
 For complete project details, features, and documentation, visit the frontend repository:
@@ -24,21 +27,21 @@ For complete project details, features, and documentation, visit the frontend re
 - `POST /auth/signin` - User login
 - `GET /auth/verify` - Verify JWT token
 
-### Adventures
+### Kicks
 
-- `GET /adventures` - Get all user's adventures
-- `POST /adventures` - Create new adventure
-- `GET /adventures/:id` - Get single adventure
-- `PUT /adventures/:id` - Update adventure
-- `DELETE /adventures/:id` - Delete adventure
-- `PATCH /adventures/:id/complete` - Toggle completion status
+- `GET /kicks` - Get all user's kicks
+- `POST /kicks` - Create new kick
+- `GET /kicks/:id` - Get single kick
+- `PUT /kicks/:id` - Update kick
+- `DELETE /kicks/:id` - Delete kick
+- `PATCH /kicks/:id/complete` - Toggle completion status
 
 ### Comments
 
-- `GET /adventures/:adventureId/comments` - Get all comments for an adventure
-- `POST /adventures/:adventureId/comments` - Create new comment
-- `PUT /adventures/:adventureId/comments/:id` - Update comment
-- `DELETE /adventures/:adventureId/comments/:id` - Delete comment
+- `GET /kicks/:kickId/comments` - Get all comments for a kick
+- `POST /kicks/:kickId/comments` - Create new comment
+- `PUT /kicks/:kickId/comments/:id` - Update comment
+- `DELETE /kicks/:kickId/comments/:id` - Delete comment
 
 ## Environment Variables
 
