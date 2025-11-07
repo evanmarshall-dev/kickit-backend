@@ -27,10 +27,25 @@ const kickSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    location: {
+      type: String,
+    },
     category: {
       type: String,
       required: true,
-      enum: ["Travel", "Hobbies", "Sports", "Skills", "Fears", "Other"],
+      enum: ["Travel", "Hobbies", "Sports", "Skills", "Experiences", "Other"],
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ["Open", "In Progress", "Completed"],
+      default: "Open",
+    },
+    completionDate: {
+      type: Date,
+    },
+    targetDate: {
+      type: Date,
     },
     author: {
       type: mongoose.Schema.Types.ObjectId,

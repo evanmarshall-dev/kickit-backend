@@ -7,7 +7,9 @@ const cors = require("cors");
 const port = process.env.PORT ? process.env.PORT : "1986";
 
 // IMPORT ROUTERS
-const kicksRouter = require("./controllers/KickController");
+const authRouter = require("./controllers/AuthController");
+const userRouter = require("./controllers/UserController");
+const kickRouter = require("./controllers/KickController");
 
 // CONNECT TO MONGOOSE
 mongoose.connect(process.env.MONGODB_URI);
@@ -20,7 +22,9 @@ kickitApp.use(cors());
 kickitApp.use(express.json());
 
 // ROUTES
-kickitApp.use("/kicks", kicksRouter);
+kickitApp.use("/auth", authRouter);
+kickitApp.use("/users", userRouter);
+kickitApp.use("/kicks", kickRouter);
 
 // START SERVER AND LISTEN ON PORT 3000
 kickitApp.listen(port, () => {
