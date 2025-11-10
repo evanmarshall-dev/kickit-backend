@@ -18,7 +18,11 @@ mongoose.connection.on("connected", () => {
 });
 
 // MIDDLEWARE
-kickitApp.use(cors());
+kickitApp.use(
+  cors({
+    origin: "https://kickit-app.netlify.app",
+  })
+);
 kickitApp.use(express.json());
 
 // ROUTES
