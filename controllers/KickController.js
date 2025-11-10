@@ -8,7 +8,8 @@ router.use(verifyToken);
 // POST /kicks
 router.post("/", async (req, res) => {
   try {
-    const { title, description, category } = req.body || {};
+    const { title, description, category, location, targetDate, status } =
+      req.body || {};
 
     if (!title || !description || !category) {
       return res.status(400).json({
@@ -20,12 +21,19 @@ router.post("/", async (req, res) => {
     // Optionally attach authenticated user as author (commented placeholder)
     req.body.author = req.user?._id;
 
-    const newKick = await Kick.create({
+    const kickData = {
       title,
       description,
       category,
       author: req.body.author,
-    });
+    };
+
+    // Add optional fields if provided
+    if (location) kickData.location = location;
+    if (targetDate) kickData.targetDate = targetDate;
+    if (status) kickData.status = status;
+
+    const newKick = await Kick.create(kickData);
     res.status(201).json(newKick);
   } catch (error) {
     console.error("Error creating kick:", error);
@@ -41,7 +49,8 @@ router.post("/", async (req, res) => {
 // GET /kicks
 router.get("/", async (req, res) => {
   try {
-    const kicks = await Kick.find()
+    // Only fetch kicks for the authenticated user
+    const kicks = await Kick.find({ author: req.user._id })
       .populate("author", "username")
       .sort({ createdAt: "desc" });
     res.status(200).json(kicks);
@@ -95,13 +104,20 @@ router.delete("/:kickId", async (req, res) => {
 router.put("/:kickId", async (req, res) => {
   try {
     const { kickId } = req.params;
-    const { title, description, category } = req.body || {};
+    const { title, description, category, location, targetDate, status } =
+      req.body || {};
 
     // Check if at least one field is provided
-    if (!title && !description && !category) {
+    if (
+      !title &&
+      !description &&
+      !category &&
+      !location &&
+      !targetDate &&
+      !status
+    ) {
       return res.status(400).json({
-        error:
-          "At least one field (title, description, or category) is required for update",
+        error: "At least one field is required for update",
         received: req.body,
       });
     }
@@ -118,9 +134,12 @@ router.put("/:kickId", async (req, res) => {
 
     // Build update object with only provided fields
     const updateFields = {};
-    if (title) updateFields.title = title;
-    if (description) updateFields.description = description;
-    if (category) updateFields.category = category;
+    if (title !== undefined) updateFields.title = title;
+    if (description !== undefined) updateFields.description = description;
+    if (category !== undefined) updateFields.category = category;
+    if (location !== undefined) updateFields.location = location;
+    if (targetDate !== undefined) updateFields.targetDate = targetDate;
+    if (status !== undefined) updateFields.status = status;
 
     // Update using findByIdAndUpdate
     const updatedKick = await Kick.findByIdAndUpdate(kickId, updateFields, {

@@ -33,12 +33,12 @@ const kickSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["Travel", "Hobbies", "Sports", "Skills", "Experiences", "Other"],
+      enum: ["Travel", "Adventure", "Skills", "Personal", "Career", "Other"],
     },
     status: {
       type: String,
       required: true,
-      enum: ["Open", "In Progress", "Completed"],
+      enum: ["Open", "Completed"],
       default: "Open",
     },
     completionDate: {
