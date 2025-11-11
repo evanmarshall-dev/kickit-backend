@@ -11,24 +11,26 @@ router.post("/", async (req, res) => {
     const { title, description, category, location, targetDate, status } =
       req.body || {};
 
-    if (!title || !description || !category) {
+    if (!title || !category) {
+      const missingFields = [];
+      if (!title) missingFields.push("title");
+      if (!category) missingFields.push("category");
+
       return res.status(400).json({
-        error: "Missing required fields: title, description, category",
-        received: req.body,
+        error: `Missing required fields: ${missingFields.join(
+          ", "
+        )}. Please provide a title and category for your adventure.`,
       });
     }
 
-    // Optionally attach authenticated user as author (commented placeholder)
-    req.body.author = req.user?._id;
-
     const kickData = {
       title,
-      description,
       category,
-      author: req.body.author,
+      author: req.user._id,
     };
 
     // Add optional fields if provided
+    if (description) kickData.description = description;
     if (location) kickData.location = location;
     if (targetDate) kickData.targetDate = targetDate;
     if (status) kickData.status = status;
@@ -39,10 +41,15 @@ router.post("/", async (req, res) => {
     console.error("Error creating kick:", error);
 
     if (error && error.name === "ValidationError") {
-      return res.status(400).json({ error: error.message });
+      const messages = Object.values(error.errors).map((e) => e.message);
+      return res
+        .status(400)
+        .json({ error: `Validation failed: ${messages.join(". ")}` });
     }
 
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to create adventure. Please try again." });
   }
 });
 
@@ -56,7 +63,12 @@ router.get("/", async (req, res) => {
     res.status(200).json(kicks);
   } catch (error) {
     console.error("Error fetching kicks:", error);
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({
+        error:
+          "Failed to load your adventures. Please refresh the page and try again.",
+      });
   }
 });
 
@@ -65,19 +77,27 @@ router.get("/:kickId", async (req, res) => {
   try {
     const { kickId } = req.params;
 
+    if (!kickId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: "Invalid adventure ID format." });
+    }
+
     const kick = await Kick.findById(kickId).populate([
       "author",
       "comments.author",
     ]);
 
     if (!kick) {
-      return res.status(404).json({ error: "Kick not found" });
+      return res
+        .status(404)
+        .json({ error: "Adventure not found. It may have been deleted." });
     }
 
     res.status(200).json(kick);
   } catch (error) {
     console.error("Error fetching kick:", error);
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to load adventure details. Please try again." });
   }
 });
 
@@ -86,17 +106,36 @@ router.delete("/:kickId", async (req, res) => {
   try {
     const { kickId } = req.params;
 
+    if (!kickId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: "Invalid adventure ID format." });
+    }
+
     const kick = await Kick.findById(kickId);
+
+    if (!kick) {
+      return res
+        .status(404)
+        .json({
+          error: "Adventure not found. It may have already been deleted.",
+        });
+    }
+
     if (!kick.author.equals(req.user._id)) {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res
+        .status(403)
+        .json({
+          error: "You do not have permission to delete this adventure.",
+        });
     }
 
     await Kick.findByIdAndDelete(kickId);
 
-    res.status(200).json({ message: "Kick deleted successfully" });
+    res.status(200).json({ message: "Adventure deleted successfully" });
   } catch (error) {
     console.error("Error deleting kick:", error);
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to delete adventure. Please try again." });
   }
 });
 
@@ -107,29 +146,37 @@ router.put("/:kickId", async (req, res) => {
     const { title, description, category, location, targetDate, status } =
       req.body || {};
 
+    if (!kickId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: "Invalid adventure ID format." });
+    }
+
     // Check if at least one field is provided
     if (
-      !title &&
-      !description &&
-      !category &&
-      !location &&
-      !targetDate &&
-      !status
+      title === undefined &&
+      description === undefined &&
+      category === undefined &&
+      location === undefined &&
+      targetDate === undefined &&
+      status === undefined
     ) {
       return res.status(400).json({
-        error: "At least one field is required for update",
-        received: req.body,
+        error:
+          "Please provide at least one field to update (title, description, category, location, targetDate, or status).",
       });
     }
 
     // First check if kick exists and user is authorized
     const kick = await Kick.findById(kickId);
     if (!kick) {
-      return res.status(404).json({ error: "Kick not found" });
+      return res
+        .status(404)
+        .json({ error: "Adventure not found. It may have been deleted." });
     }
 
     if (!kick.author.equals(req.user._id)) {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res
+        .status(403)
+        .json({ error: "You do not have permission to edit this adventure." });
     }
 
     // Build update object with only provided fields
@@ -152,10 +199,15 @@ router.put("/:kickId", async (req, res) => {
     console.error("Error updating kick:", error);
 
     if (error && error.name === "ValidationError") {
-      return res.status(400).json({ error: error.message });
+      const messages = Object.values(error.errors).map((e) => e.message);
+      return res
+        .status(400)
+        .json({ error: `Validation failed: ${messages.join(". ")}` });
     }
 
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to update adventure. Please try again." });
   }
 });
 
@@ -165,20 +217,26 @@ router.post("/:kickId/comments", async (req, res) => {
     const { kickId } = req.params;
     const { text } = req.body || {};
 
-    if (!text) {
+    if (!kickId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: "Invalid adventure ID format." });
+    }
+
+    if (!text || !text.trim()) {
       return res.status(400).json({
-        error: "Missing required field: text",
-        received: req.body,
+        error:
+          "Comment text is required. Please write a comment before posting.",
       });
     }
 
     const kick = await Kick.findById(kickId);
     if (!kick) {
-      return res.status(404).json({ error: "Kick not found" });
+      return res
+        .status(404)
+        .json({ error: "Adventure not found. Cannot add comment." });
     }
 
     const newComment = {
-      text,
+      text: text.trim(),
       author: req.user._id,
     };
 
@@ -188,7 +246,7 @@ router.post("/:kickId/comments", async (req, res) => {
     res.status(201).json(newComment);
   } catch (error) {
     console.error("Error adding comment:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to add comment. Please try again." });
   }
 });
 
@@ -197,18 +255,30 @@ router.delete("/:kickId/comments/:commentId", async (req, res) => {
   try {
     const { kickId, commentId } = req.params;
 
+    if (!kickId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: "Invalid adventure ID format." });
+    }
+
     const kick = await Kick.findById(kickId);
     if (!kick) {
-      return res.status(404).json({ error: "Kick not found" });
+      return res
+        .status(404)
+        .json({ error: "Adventure not found. Cannot delete comment." });
     }
 
     const comment = kick.comments.id(commentId);
     if (!comment) {
-      return res.status(404).json({ error: "Comment not found" });
+      return res
+        .status(404)
+        .json({
+          error: "Comment not found. It may have already been deleted.",
+        });
     }
 
     if (!comment.author.equals(req.user._id)) {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res
+        .status(403)
+        .json({ error: "You can only delete your own comments." });
     }
 
     kick.comments.pull(commentId);
@@ -217,7 +287,9 @@ router.delete("/:kickId/comments/:commentId", async (req, res) => {
     res.status(200).json({ message: "Comment deleted successfully" });
   } catch (error) {
     console.error("Error deleting comment:", error);
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to delete comment. Please try again." });
   }
 });
 
@@ -227,59 +299,80 @@ router.put("/:kickId/comments/:commentId", async (req, res) => {
     const { kickId, commentId } = req.params;
     const { text } = req.body || {};
 
-    if (!text) {
+    if (!kickId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: "Invalid adventure ID format." });
+    }
+
+    if (!text || !text.trim()) {
       return res.status(400).json({
-        error: "Missing required field: text",
-        received: req.body,
+        error:
+          "Comment text is required. Please provide text for your comment.",
       });
     }
 
     const kick = await Kick.findById(kickId);
     if (!kick) {
-      return res.status(404).json({ error: "Kick not found" });
+      return res
+        .status(404)
+        .json({ error: "Adventure not found. Cannot update comment." });
     }
 
     const comment = kick.comments.id(commentId);
     if (!comment) {
-      return res.status(404).json({ error: "Comment not found" });
+      return res
+        .status(404)
+        .json({ error: "Comment not found. It may have been deleted." });
     }
 
     if (!comment.author.equals(req.user._id)) {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res
+        .status(403)
+        .json({ error: "You can only edit your own comments." });
     }
 
-    comment.text = text;
+    comment.text = text.trim();
     await kick.save();
 
     res.status(200).json(comment);
   } catch (error) {
     console.error("Error updating comment:", error);
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to update comment. Please try again." });
   }
 });
 
 // PATCH /kicks/:kickId/status
-// - For kicks to update status (eg. completed)
-// - TODO: Figure out how to create this in back-end and front-end. It will be a radio button next to the kick.
 router.patch("/:kickId/status", async (req, res) => {
   try {
     const { kickId } = req.params;
     const { status } = req.body || {};
 
+    if (!kickId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: "Invalid adventure ID format." });
+    }
+
     if (!status) {
       return res.status(400).json({
-        error: "Missing required field: status",
-        received: req.body,
+        error:
+          "Status is required. Please provide a valid status (Open or Completed).",
       });
     }
 
     const kick = await Kick.findById(kickId);
     if (!kick) {
-      return res.status(404).json({ error: "Kick not found" });
+      return res
+        .status(404)
+        .json({ error: "Adventure not found. Cannot update status." });
     }
 
     if (!kick.author.equals(req.user._id)) {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res
+        .status(403)
+        .json({
+          error:
+            "You do not have permission to update this adventure's status.",
+        });
     }
 
     kick.status = status;
@@ -288,7 +381,18 @@ router.patch("/:kickId/status", async (req, res) => {
     res.status(200).json(kick);
   } catch (error) {
     console.error("Error updating kick status:", error);
-    res.status(500).json({ error: error.message });
+
+    if (error.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({
+          error: "Invalid status value. Status must be 'Open' or 'Completed'.",
+        });
+    }
+
+    res
+      .status(500)
+      .json({ error: "Failed to update adventure status. Please try again." });
   }
 });
 

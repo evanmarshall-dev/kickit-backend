@@ -12,15 +12,24 @@ router.get("/", async (req, res) => {
 
     res.json(users);
   } catch (err) {
-    res.status(500).json({ err: err.message });
+    console.error("Error fetching users:", err);
+    res.status(500).json({ err: "Failed to load users. Please try again." });
   }
 });
 
 // GET /users/:userId
 router.get("/:userId", async (req, res) => {
   try {
+    if (!req.params.userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ err: "Invalid user ID format." });
+    }
+
     if (req.user._id !== req.params.userId) {
-      return res.status(403).json({ err: "Unauthorized" });
+      return res
+        .status(403)
+        .json({
+          err: "You do not have permission to view this user's profile.",
+        });
     }
 
     const user = await User.findById(req.params.userId);
@@ -31,7 +40,10 @@ router.get("/:userId", async (req, res) => {
 
     res.json({ user });
   } catch (err) {
-    res.status(500).json({ err: err.message });
+    console.error("Error fetching user:", err);
+    res
+      .status(500)
+      .json({ err: "Failed to load user profile. Please try again." });
   }
 });
 

@@ -10,22 +10,34 @@ const saltRounds = 12;
 // POST /auth/signup
 router.post("/signup", async (req, res) => {
   try {
-    const userInDatabase = await User.findOne({ username: req.body.username });
-
-    if (userInDatabase) {
-      return res.status(409).json({ err: "Username already taken." });
-    }
-
-    // Check for required fields
+    // Check for required fields first
     if (
       !req.body.username ||
       !req.body.password ||
       !req.body.name ||
       !req.body.email
     ) {
+      const missingFields = [];
+      if (!req.body.username) missingFields.push("username");
+      if (!req.body.password) missingFields.push("password");
+      if (!req.body.name) missingFields.push("name");
+      if (!req.body.email) missingFields.push("email");
+
+      return res.status(400).json({
+        err: `Missing required fields: ${missingFields.join(
+          ", "
+        )}. Please fill in all required information.`,
+      });
+    }
+
+    const userInDatabase = await User.findOne({ username: req.body.username });
+
+    if (userInDatabase) {
       return res
-        .status(400)
-        .json({ err: "Username, password, name, and email are required." });
+        .status(409)
+        .json({
+          err: "This username is already taken. Please choose a different username.",
+        });
     }
 
     const user = await User.create({
@@ -49,17 +61,44 @@ router.post("/signup", async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ err: err.message });
+    console.error("Signup error:", err);
+
+    if (err.code === 11000) {
+      // Duplicate key error
+      const field = Object.keys(err.keyPattern)[0];
+      return res.status(409).json({
+        err: `This ${field} is already registered. Please use a different ${field} or sign in.`,
+      });
+    }
+
+    if (err.name === "ValidationError") {
+      const messages = Object.values(err.errors).map((e) => e.message);
+      return res.status(400).json({ err: messages.join(". ") });
+    }
+
+    res
+      .status(500)
+      .json({ err: "An error occurred during sign up. Please try again." });
   }
 });
 
 // POST /auth/signin
 router.post("/signin", async (req, res) => {
   try {
+    if (!req.body.username || !req.body.password) {
+      return res.status(400).json({
+        err: "Please provide both username and password to sign in.",
+      });
+    }
+
     const user = await User.findOne({ username: req.body.username });
 
     if (!user) {
-      return res.status(401).json({ err: "Invalid credentials." });
+      return res
+        .status(401)
+        .json({
+          err: "Invalid username or password. Please check your credentials and try again.",
+        });
     }
 
     const isPasswordCorrect = bcrypt.compareSync(
@@ -68,7 +107,11 @@ router.post("/signin", async (req, res) => {
     );
 
     if (!isPasswordCorrect) {
-      return res.status(401).json({ err: "Invalid credentials." });
+      return res
+        .status(401)
+        .json({
+          err: "Invalid username or password. Please check your credentials and try again.",
+        });
     }
 
     const payload = { username: user.username, _id: user._id };
@@ -85,7 +128,10 @@ router.post("/signin", async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ err: err.message });
+    console.error("Signin error:", err);
+    res
+      .status(500)
+      .json({ err: "An error occurred during sign in. Please try again." });
   }
 });
 

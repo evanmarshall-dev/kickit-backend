@@ -20,7 +20,7 @@ mongoose.connection.on("connected", () => {
 // MIDDLEWARE
 kickitApp.use(
   cors({
-    origin: "https://kickit-app.netlify.app",
+    origin: ["https://kickit-app.netlify.app", "http://localhost:5173"],
   })
 );
 kickitApp.use(express.json());

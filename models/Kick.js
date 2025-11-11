@@ -25,7 +25,6 @@ const kickSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: true,
     },
     location: {
       type: String,
