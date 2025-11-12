@@ -1270,7 +1270,7 @@ Authorization: Bearer <your-token-here>
 **Setup:**
 
 ```bash
-npm install --save-dev jest supertest
+pnpm install --save-dev jest supertest
 ```
 
 **Example Test (`__tests__/kicks.test.js`):**
@@ -1388,8 +1388,8 @@ JWT_SECRET=<strong-random-key>
 1. **Push code to GitHub**
 2. **Connect Render to GitHub repo**
 3. **Configure environment variables in Render dashboard**
-4. **Set build command:** `npm install`
-5. **Set start command:** `npm start`
+4. **Set build command:** `pnpm install`
+5. **Set start command:** `pnpm start`
 6. **Deploy!**
 
 ### CORS Configuration for Production
@@ -1879,16 +1879,16 @@ Keep building, keep learning, and welcome to the industry! 🚀
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server (with nodemon)
-npm run dev
+pnpm run dev
 
 # Start production server
-npm start
+pnpm start
 
 # Install a new package
-npm install package-name
+pnpm install package-name
 
 # MongoDB connection string format
 mongodb://localhost:27017/database-name
