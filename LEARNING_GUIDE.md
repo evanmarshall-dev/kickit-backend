@@ -1,6 +1,6 @@
 # KickIt Backend - Comprehensive Engineering Guide
 
-> **Author:** Senior Lead Fullstack Engineer
+> **Author:** Fullstack Engineer
 > **Purpose:** A detailed learning document for junior engineers entering the industry
 > **Project:** KickIt - A bucket list/adventure tracking application backend API
 
@@ -33,19 +33,19 @@
 
 KickIt is a full-stack web application that allows users to create, manage, and track their "bucket list" adventures (called "kicks"). Users can:
 
-- Create adventures with categories (Travel, Skills, Personal, Career, etc.)
+- Create kicks with categories (Travel, Skills, Personal, Career, etc.)
 - Track progress with statuses (Open, Completed)
-- Add comments to adventures
+- Add comments to kicks
 - Set target dates and locations
-- View their personal adventure collection
+- View their personal kick collection
 
 ### Business Logic
 
 The application implements a **user-centric** model where:
 
-- Each user owns their adventures
-- Only the owner can modify/delete their adventures
-- Users can comment on adventures
+- Each user owns their kicks
+- Only the owner can modify/delete their kicks
+- Users can comment on kicks
 - Authentication is required for all operations (except signup/signin)
 
 ---
@@ -193,7 +193,6 @@ app.listen(3000);
 | `jsonwebtoken` | JWT token generation            | Stateless authentication                         |
 | `cors`         | Cross-Origin Resource Sharing   | Allows frontend (different domain) to access API |
 | `dotenv`       | Environment variable management | Keep secrets out of code                         |
-| `morgan`       | HTTP request logger             | Debugging and monitoring                         |
 
 ---
 
@@ -768,8 +767,8 @@ Content-Type: application/json
 
 // Examples:
 { "error": "Missing required fields: title, category" }
-{ "error": "Invalid adventure ID format." }
-{ "error": "You do not have permission to delete this adventure." }
+{ "error": "Invalid kick ID format." }
+{ "error": "You do not have permission to delete this kick." }
 ```
 
 ### API Versioning
@@ -975,7 +974,7 @@ res.status(500).json({ error: error.message });
 
 // ✅ GOOD - User-focused
 res.status(500).json({
-  error: "Failed to load adventure. Please try again.",
+  error: "Failed to load kick. Please try again.",
 });
 ```
 
@@ -1085,7 +1084,7 @@ router.post("/", async (req, res) => {
     }
 
     res.status(500).json({
-      error: "Failed to create adventure. Please try again.",
+      error: "Failed to create kick. Please try again.",
     });
   }
 });
@@ -1157,7 +1156,7 @@ router.put("/:kickId", async (req, res) => {
     res.status(200).json(updatedKick);
   } catch (error) {
     console.error("Error updating kick:", error);
-    res.status(500).json({ error: "Failed to update adventure" });
+    res.status(500).json({ error: "Failed to update kick" });
   }
 });
 ```
